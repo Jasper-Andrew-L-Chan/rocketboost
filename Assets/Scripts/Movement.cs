@@ -6,18 +6,61 @@ using UnityEngine.InputSystem;
 public class Movement : MonoBehaviour
 {
     [SerializeField] InputAction thrust;
-
+    [SerializeField] InputAction rotation;
+    [SerializeField] float rotationStrength = 100f;
+    [SerializeField] float thrustStrength = 100f;
+    Rigidbody rb;
+    AudioSource audioSource;
+    void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+        audioSource = GetComponent<AudioSource>();
+        
+    }
     private void OnEnable()
     {
         thrust.Enable();
+        rotation.Enable();
     }
-    void Update()
+    void FixedUpdate()
     {
-        if (thrust.triggered)
+        ProcessThrust();
+        ProcessRotation();
+    }
+
+    private void ProcessThrust()
+    {
+        if (thrust.IsPressed())
         {
-            Debug.Log("Thrust is pressed");
-            
+            rb.AddRelativeForce(Vector3.up * thrustStrength * Time.fixedDeltaTime);
+            if (!audioSource.isPlaying)
+            {
+                audioSource.Play();
+            }
+        }
+        else
+        {
+            audioSource.Stop();
         }
     }
 
+    private void ProcessRotation()
+    {
+        float rotationInput = rotation.ReadValue<float>();
+        if (rotationInput < 0)
+        {
+            ApplyRotation(rotationStrength);
+        }
+        else if (rotationInput > 0)
+        {
+            ApplyRotation(-rotationStrength);
+        }
+    }
+
+    private void ApplyRotation(float rotationThisFrame)
+    {
+        rb.freezeRotation = true;
+        transform.Rotate(Vector3.forward * rotationThisFrame * Time.fixedDeltaTime);
+        rb.freezeRotation = false;
+    }
 }
